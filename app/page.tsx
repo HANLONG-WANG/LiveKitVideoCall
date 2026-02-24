@@ -52,25 +52,22 @@ export default function Page() {
         autoSubscribe: true,
       }}
       // 【核心修改 2】发布选项：码率拉满，关闭联播，指定编码器
+      // 最终推荐配置 (兼顾画质与稳定性)
       options={{
+        adaptiveStream: false,
+        dynacast: false,
         publishDefaults: {
-          simulcast: false, // 关掉联播，只发一路流
-          red: false,       // 关闭音频冗余，节省带宽
-          videoCodec: 'h264', // 强制使用 H.264 硬件编码！关键！
+          simulcast: false,
+          videoCodec: 'av1', // 保持 H.264
           videoEncoding: {
-            maxBitrate: 8_000_000, // 尝试拉到 8Mbps
+            maxBitrate: 10_000_000,
             maxFramerate: 60,
           },
         },
-        // 【核心修改 3】采集参数：稍微温和一点，防止 Safari 罢工
         videoCaptureDefaults: {
-          deviceId: "", // 使用默认摄像头
-          resolution: {
-            width: 1920,
-            height: 1080,
-            frameRate: 60
-          }
-        },
+          resolution: { width: 1920, height: 1080, frameRate: 60 },
+          facingMode: 'user',
+        }
       }}
       data-lk-theme="default"
       style={{ height: '100vh' }}
