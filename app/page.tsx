@@ -58,7 +58,7 @@ export default function Page() {
         dynacast: false,
         publishDefaults: {
           simulcast: false,
-          videoCodec: 'av1', // 保持 H.264
+          videoCodec: 'h264', // 保持 H.264
           videoEncoding: {
             maxBitrate: 10_000_000,
             maxFramerate: 60,
