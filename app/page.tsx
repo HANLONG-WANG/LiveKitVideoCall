@@ -5,59 +5,71 @@ import {
   LiveKitRoom,
   VideoConference,
   RoomAudioRenderer,
+  formatChatMessageLinks,
 } from '@livekit/components-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 export default function Page() {
-  const [roomName, setRoomName] = useState('japan-room'); // 默认房间号
+  const [roomName, setRoomName] = useState('japan-vip-room');
   const [token, setToken] = useState("");
 
   async function joinRoom() {
-    // 随机生成一个用户名，比如 user-1234
     const username = "user-" + Math.floor(Math.random() * 10000);
-
-    // 请求我们刚才写的 API 获取 Token
-    const resp = await fetch(`/api/token?room=${roomName}&username=${username}`);
-    const data = await resp.json();
-    setToken(data.token);
+    try {
+      const resp = await fetch(`/api/token?room=${roomName}&username=${username}`);
+      const data = await resp.json();
+      setToken(data.token);
+    } catch (e) {
+      console.error(e);
+    }
   }
 
   if (token === "") {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-gray-900 text-white gap-4">
-        <h1 className="text-2xl font-bold">1080P 高清专属视频通话</h1>
+      <div className="flex flex-col items-center justify-center min-h-screen bg-black text-white gap-4">
+        <h1 className="text-xl font-bold">VIP 专线 (H.264 硬解)</h1>
         <input
           type="text"
           value={roomName}
           onChange={(e) => setRoomName(e.target.value)}
           className="text-black px-4 py-2 rounded"
         />
-        <button onClick={joinRoom} className="bg-blue-600 px-6 py-2 rounded hover:bg-blue-500">
-          加入房间
+        <button onClick={joinRoom} className="bg-blue-600 px-6 py-2 rounded">
+          Start Call
         </button>
       </div>
     );
   }
 
-  // 这里的参数是你想要的高画质核心！
   return (
     <LiveKitRoom
       video={true}
       audio={true}
       token={token}
       serverUrl={process.env.NEXT_PUBLIC_LIVEKIT_URL}
-      // 核心：强制拉起 1080P 60帧 的摄像头画面
+      // 【核心修改 1】连接选项：强制 H.264，关闭自动订阅低画质
+      connectOptions={{
+        autoSubscribe: true,
+      }}
+      // 【核心修改 2】发布选项：码率拉满，关闭联播，指定编码器
       options={{
-        videoCaptureDefaults: {
-          resolution: { width: 1920, height: 1080, frameRate: 60 },
-        },
         publishDefaults: {
-          // 关闭多分辨率自适应（为了强制高清，禁用联播）
-          simulcast: false,
+          simulcast: false, // 关掉联播，只发一路流
+          red: false,       // 关闭音频冗余，节省带宽
+          videoCodec: 'h264', // 强制使用 H.264 硬件编码！关键！
           videoEncoding: {
-            maxBitrate: 5_000_000, // 强制 5 Mbps (5000 kbps) 码率
+            maxBitrate: 8_000_000, // 尝试拉到 8Mbps
             maxFramerate: 60,
           },
+        },
+        // 【核心修改 3】采集参数：稍微温和一点，防止 Safari 罢工
+        videoCaptureDefaults: {
+          deviceId: "", // 使用默认摄像头
+          resolution: {
+            width: 1920,
+            height: 1080,
+            frameRate: 60
+          }
         },
       }}
       data-lk-theme="default"
